@@ -1,0 +1,8 @@
+{
+  "bank_id": "example-project",
+  "purpose": "project_knowledge",
+  "mission": "Store reviewed, reusable knowledge for one project. Replace this example with project-specific scope and ownership.",
+  "template": "seed.md",
+  "tags": ["example", "project"],
+  "version": 1
+}

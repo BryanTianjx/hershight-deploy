@@ -1,0 +1,70 @@
+name: hindsight
+
+# Basic single-host deployment using Hindsight embedded PostgreSQL (pg0).
+# The default LLM provider is remote; this is NOT a fully offline setup.
+# The llama.cpp sidecar is optional and is not selected as provider automatically.
+services:
+  llama:
+    profiles: ["local-llm"]
+    image: ghcr.io/ggml-org/llama.cpp:${LLAMA_CPP_IMAGE_TAG:-server}
+    container_name: hindsight-llama
+    restart: unless-stopped
+    environment:
+      LLAMA_ARG_HOST: 0.0.0.0
+      LLAMA_ARG_PORT: "8080"
+      LLAMA_ARG_HF_REPO: ${LLAMA_ARG_HF_REPO:-bartowski/google_gemma-4-E2B-it-GGUF}
+      LLAMA_ARG_HF_FILE: ${LLAMA_ARG_HF_FILE:-google_gemma-4-E2B-it-Q4_K_M.gguf}
+      LLAMA_ARG_CTX_SIZE: "${LLAMA_ARG_CTX_SIZE:-32768}"
+      LLAMA_ARG_PARALLEL: "${LLAMA_ARG_PARALLEL:-4}"
+      LLAMA_ARG_SLOT_TIMEOUT: "${LLAMA_ARG_SLOT_TIMEOUT:-600}"
+    volumes:
+      - llama_models:/root/.cache/huggingface
+    ports:
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+
+  hindsight:
+    image: ghcr.io/vectorize-io/hindsight:${HINDSIGHT_IMAGE_TAG:-latest}
+    container_name: hindsight-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8888:8888"
+      - "127.0.0.1:9999:9999"
+    environment:
+      HINDSIGHT_API_LLM_PROVIDER: ${HINDSIGHT_API_LLM_PROVIDER:-groq}
+      HINDSIGHT_API_LLM_BASE_URL: ${HINDSIGHT_API_LLM_BASE_URL:-https://api.groq.com/openai/v1}
+      HINDSIGHT_API_LLM_API_KEY: ${HINDSIGHT_API_LLM_API_KEY:?Set HINDSIGHT_API_LLM_API_KEY in .env}
+      HINDSIGHT_API_LLM_MODEL: ${HINDSIGHT_API_LLM_MODEL:-}
+      HINDSIGHT_API_LLM_TIMEOUT: "${HINDSIGHT_API_LLM_TIMEOUT:-900}"
+      HINDSIGHT_API_RETAIN_LLM_TIMEOUT: "${HINDSIGHT_API_RETAIN_LLM_TIMEOUT:-900}"
+      HINDSIGHT_API_REFLECT_LLM_TIMEOUT: "${HINDSIGHT_API_REFLECT_LLM_TIMEOUT:-900}"
+      HINDSIGHT_API_LLM_CONNECT_TIMEOUT: "${HINDSIGHT_API_LLM_CONNECT_TIMEOUT:-60}"
+      HINDSIGHT_API_LLM_DEBUG_DUMP_4XX: "false"
+      HINDSIGHT_API_EMBEDDINGS_PROVIDER: ${HINDSIGHT_API_EMBEDDINGS_PROVIDER:-onnx}
+      HINDSIGHT_API_EMBEDDINGS_ONNX_MODEL_ID: ${HINDSIGHT_API_EMBEDDINGS_ONNX_MODEL_ID:-intfloat/multilingual-e5-small}
+      HINDSIGHT_API_EMBEDDINGS_ONNX_DIMENSIONS: "${HINDSIGHT_API_EMBEDDINGS_ONNX_DIMENSIONS:-384}"
+      HINDSIGHT_API_EMBEDDINGS_ONNX_POOLING: ${HINDSIGHT_API_EMBEDDINGS_ONNX_POOLING:-mean}
+      HINDSIGHT_API_EMBEDDINGS_ONNX_NORMALIZE: "${HINDSIGHT_API_EMBEDDINGS_ONNX_NORMALIZE:-true}"
+      HINDSIGHT_API_EMBEDDINGS_ONNX_QUERY_PREFIX: "${HINDSIGHT_API_EMBEDDINGS_ONNX_QUERY_PREFIX:-query: }"
+      HINDSIGHT_API_EMBEDDINGS_ONNX_PASSAGE_PREFIX: "${HINDSIGHT_API_EMBEDDINGS_ONNX_PASSAGE_PREFIX:-passage: }"
+      HINDSIGHT_API_EMBEDDINGS_ONNX_BATCH_SIZE: "${HINDSIGHT_API_EMBEDDINGS_ONNX_BATCH_SIZE:-32}"
+      HINDSIGHT_API_EMBEDDINGS_ONNX_CPU_MEM_ARENA: "${HINDSIGHT_API_EMBEDDINGS_ONNX_CPU_MEM_ARENA:-false}"
+      HINDSIGHT_API_EMBEDDINGS_ONNX_DEVICE: ${HINDSIGHT_API_EMBEDDINGS_ONNX_DEVICE:-cpu}
+      HF_HUB_DOWNLOAD_TIMEOUT: "${HF_HUB_DOWNLOAD_TIMEOUT:-600}"
+    volumes:
+      - pg_data:/home/hindsight/.pg0
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8888/health',timeout=5).status==200 else 1)\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  llama_models:
+  pg_data:

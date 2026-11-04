@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "02-toolkit/src/hindsight_deploy"}
+packages = ["hindsight_deploy", "hindsight_deploy.infrastructure", "hindsight_deploy.memory"]
+
+[project]
+name = "hindsight-deploy"
+version = "0.2.0"
+description = "Hindsight External Deployment & Operations Toolkit"
+requires-python = ">=3.12"
+dependencies = [
+    "typer>=0.9.0",
+    "pyyaml>=6.0",
+    "pydantic>=2.5",
+    "httpx>=0.27",
+    "psycopg[binary]>=3.1",
+    "rich>=13.0",
+]
+
+[project.scripts]
+hindsight-deploy = "hindsight_deploy.cli:app"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=2.0",
+    "ruff>=0.3.0",
+]

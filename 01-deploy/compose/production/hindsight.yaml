@@ -1,0 +1,78 @@
+name: hindsight-prod
+
+# Production-oriented example. PostgreSQL is internal to the Compose network.
+# API and inference ports bind to loopback. Pin and test image versions before use.
+services:
+  db:
+    image: pgvector/pgvector:${POSTGRES_IMAGE_TAG:-pg18}
+    container_name: hindsight-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hindsight
+      POSTGRES_PASSWORD: ${HINDSIGHT_DB_PASSWORD:?Set HINDSIGHT_DB_PASSWORD in .env}
+      POSTGRES_DB: hindsight
+    volumes:
+      - pg_data:/var/lib/postgresql/18/docker
+      - ./init/001-enable-vector.sql:/docker-entrypoint-initdb.d/001-enable-vector.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hindsight -d hindsight"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  llama:
+    image: ghcr.io/ggml-org/llama.cpp:${LLAMA_CPP_IMAGE_TAG:-server}
+    container_name: hindsight-prod-llama
+    restart: unless-stopped
+    environment:
+      LLAMA_ARG_HOST: 0.0.0.0
+      LLAMA_ARG_PORT: "8080"
+      LLAMA_ARG_HF_REPO: ${LLAMA_ARG_HF_REPO:-bartowski/google_gemma-4-E2B-it-GGUF}
+      LLAMA_ARG_HF_FILE: ${LLAMA_ARG_HF_FILE:-google_gemma-4-E2B-it-Q4_K_M.gguf}
+      LLAMA_ARG_CTX_SIZE: "${LLAMA_ARG_CTX_SIZE:-32768}"
+      LLAMA_ARG_PARALLEL: "${LLAMA_ARG_PARALLEL:-4}"
+      LLAMA_ARG_SLOT_TIMEOUT: "${LLAMA_ARG_SLOT_TIMEOUT:-600}"
+    volumes:
+      - llama_models:/root/.cache/huggingface
+    ports:
+      - "127.0.0.1:8081:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+
+  hindsight:
+    image: ghcr.io/vectorize-io/hindsight:${HINDSIGHT_IMAGE_TAG:-latest}
+    container_name: hindsight-prod-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      llama:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8889:8888"
+      - "127.0.0.1:9998:9999"
+    environment:
+      HINDSIGHT_API_LLM_PROVIDER: openai
+      HINDSIGHT_API_LLM_BASE_URL: http://llama:8080/v1
+      HINDSIGHT_API_LLM_API_KEY: ${HINDSIGHT_API_LLM_API_KEY:-not-needed}
+      HINDSIGHT_API_LLM_MODEL: ${HINDSIGHT_API_LLM_MODEL:-gemma-4-e2b-it}
+      HINDSIGHT_API_LLM_TIMEOUT: "${HINDSIGHT_API_LLM_TIMEOUT:-900}"
+      HINDSIGHT_API_RETAIN_LLM_TIMEOUT: "${HINDSIGHT_API_RETAIN_LLM_TIMEOUT:-900}"
+      HINDSIGHT_API_REFLECT_LLM_TIMEOUT: "${HINDSIGHT_API_REFLECT_LLM_TIMEOUT:-900}"
+      HINDSIGHT_API_LLM_CONNECT_TIMEOUT: "${HINDSIGHT_API_LLM_CONNECT_TIMEOUT:-60}"
+      HINDSIGHT_API_LLM_DEBUG_DUMP_4XX: "false"
+      HINDSIGHT_API_DATABASE_URL: postgresql://hindsight:${HINDSIGHT_DB_PASSWORD:?Set HINDSIGHT_DB_PASSWORD in .env}@db:5432/hindsight
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8888/health',timeout=5).status==200 else 1)\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  llama_models:
+  pg_data:
