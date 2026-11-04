@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/hindsight-deploy/manifest.schema.json",
+  "title": "Hindsight Memory Bank Manifest",
+  "description": "Repository-side declaration for provisioning one Hindsight External memory bank.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "version", "bank_id", "name", "purpose", "mission", "ownership", "scope", "exclusions", "template", "tags", "provisioning", "recording_policy"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "version": { "type": "integer", "minimum": 1 },
+    "bank_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$", "maxLength": 64 },
+    "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "purpose": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "description": { "type": "string", "maxLength": 500 },
+    "mission": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "ownership": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "project_id"],
+      "properties": {
+        "type": { "enum": ["personal", "project", "shared"] },
+        "project_id": { "type": "string", "minLength": 1, "maxLength": 100 }
+      }
+    },
+    "scope": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "exclusions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "template": { "type": ["string", "null"], "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
+    "tags": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 100 } },
+    "provisioning": {
+      "type": "object", "additionalProperties": false,
+      "required": ["bank_policy", "seed"],
+      "properties": {
+        "bank_policy": { "const": "ensure_present" },
+        "seed": {
+          "type": "object", "additionalProperties": false,
+          "required": ["enabled", "source", "mode"],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "source": { "type": ["string", "null"], "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
+            "mode": { "enum": ["once_per_seed_revision", "always", "disabled"] }
+          }
+        }
+      }
+    },
+    "recording_policy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["require_source_and_date", "require_verification_status", "separate_facts_from_hypotheses", "prefer_updates_over_duplicate_entries"],
+      "properties": {
+        "require_source_and_date": { "type": "boolean" },
+        "require_verification_status": { "type": "boolean" },
+        "separate_facts_from_hypotheses": { "type": "boolean" },
+        "prefer_updates_over_duplicate_entries": { "type": "boolean" }
+      }
+    }
+  }
+}

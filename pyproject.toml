@@ -8,7 +8,7 @@ packages = ["hindsight_deploy", "hindsight_deploy.infrastructure", "hindsight_de
 
 [project]
 name = "hindsight-deploy"
-version = "0.2.0"
+version = "0.3.0"
 description = "Hindsight External Deployment & Operations Toolkit"
 requires-python = ">=3.12"
 dependencies = [
@@ -18,10 +18,12 @@ dependencies = [
     "httpx>=0.27",
     "psycopg[binary]>=3.1",
     "rich>=13.0",
+    "jsonschema>=4.21",
 ]
 
 [project.scripts]
 hindsight-deploy = "hindsight_deploy.cli:app"
+hindsight-memory = "hindsight_deploy.memory_cli:app"
 
 [project.optional-dependencies]
 dev = [
