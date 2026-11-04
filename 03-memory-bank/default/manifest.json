@@ -1,5 +1,5 @@
 {
-  "bank_id": "example-project",
+  "bank_id": "default",
   "purpose": "project_knowledge",
   "mission": "Store reviewed, reusable knowledge for one project. Replace this example with project-specific scope and ownership.",
   "template": "seed.md",
