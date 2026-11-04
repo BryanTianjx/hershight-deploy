@@ -1,8 +1,48 @@
 {
-  "bank_id": "default",
+  "schema_version": "1.0",
+  "version": 1,
+  "bank_id": "example-project",
+  "name": "Example Project",
   "purpose": "project_knowledge",
-  "mission": "Store reviewed, reusable knowledge for one project. Replace this example with project-specific scope and ownership.",
+  "description": "A reusable Hindsight memory bank for reviewed knowledge belonging to one project.",
+  "mission": "Preserve concise, verified, reusable project knowledge that helps authorized agents understand the project, make consistent decisions, and execute work safely.",
+  "ownership": {
+    "type": "project",
+    "project_id": "example-project"
+  },
+  "scope": [
+    "Project purpose, requirements, and constraints",
+    "Architecture, interfaces, and design decisions",
+    "Verified implementation details and engineering conventions",
+    "Operational procedures and reproducible troubleshooting",
+    "Test results, validation evidence, and known limitations"
+  ],
+  "exclusions": [
+    "Credentials, API keys, tokens, and other secrets",
+    "Personal identifiers or unrelated personal history",
+    "Unverified assumptions presented as facts",
+    "Bulk copies of authoritative source documents",
+    "Transient logs or information with no expected reuse value"
+  ],
   "template": "seed.md",
-  "tags": ["example", "project"],
-  "version": 1
+  "tags": [
+    "project:example-project",
+    "knowledge:architecture",
+    "knowledge:engineering",
+    "knowledge:operations"
+  ],
+  "provisioning": {
+    "bank_policy": "ensure_present",
+    "seed": {
+      "enabled": true,
+      "source": "seed.md",
+      "mode": "once_per_seed_revision"
+    }
+  },
+  "recording_policy": {
+    "require_source_and_date": true,
+    "require_verification_status": true,
+    "separate_facts_from_hypotheses": true,
+    "prefer_updates_over_duplicate_entries": true
+  }
 }
