@@ -37,7 +37,7 @@
           "properties": {
             "enabled": { "type": "boolean" },
             "source": { "type": ["string", "null"], "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
-            "mode": { "enum": ["once_per_seed_revision", "always", "disabled"] }
+            "mode": { "enum": ["once_per_seed_revision", "disabled"] }
           }
         }
       }

@@ -105,7 +105,7 @@ class DeploymentReport:
         return {"report_version":"1.0","generated_at":self.generated_at,"api_healthy":self.api_healthy,
                 "summary":{"total":len(rows),"created":sum(x["creation"]=="created" for x in rows),
                 "existing":sum(x["creation"]=="existing" for x in rows),
-                "initialized":sum(x["initialization"]=="completed" for x in rows),
+                "initialized":sum(x["initialization"] in {"completed","matched","updated"} for x in rows),
                 "verified":sum(x["verification"]=="passed" for x in rows),
                 "failed":sum(bool(x["error"]) or x["verification"]=="failed" for x in rows),
                 "drifted":sum(bool(x["drift"]) for x in rows)},"banks":rows}
@@ -162,7 +162,6 @@ def provision(client: HindsightClient, banks: list[Bank], state_path: Path = STA
                         save_state(state,state_path); r.seed="submitted"
             r.fact_count=client.count_memories(b.bank_id); r.verification="passed"
             revisions=state.get("seeds",{}).get(b.bank_id,{})
-            if any(x.get("status")=="completed" for x in revisions.values()): r.initialization="completed"
         except (HindsightAPIError,OSError,ManifestError) as exc:
             r.error=str(exc); r.verification="failed"
         if r.seed=="not_requested" and do_seed and b.seed_path is None: r.seed="disabled"
