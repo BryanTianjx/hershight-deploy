@@ -141,7 +141,7 @@ def provision(client: HindsightClient, banks: list[Bank], state_path: Path = STA
             try: current=client.get_bank(b.bank_id); r.creation="existing"
             except HindsightAPIError as exc:
                 if exc.status_code!=404: raise
-                current=client.create_bank(b.bank_id,b.mission,{"skepticism":3,"literalism":3,"empathy":3}); r.creation="created"
+                client.create_bank(b.bank_id,b.mission,{"skepticism":3,"literalism":3,"empathy":3}); current=client.get_bank(b.bank_id); r.creation="created"
             if current.get("mission")!=b.mission: client.update_bank(b.bank_id,b.mission); r.initialization="updated"
             else: r.initialization="matched"
             if do_seed and b.seed_path:
