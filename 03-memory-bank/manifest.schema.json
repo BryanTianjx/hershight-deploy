@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.invalid/hindsight-deploy/manifest.schema.json",
+  "$id": "https://github.com/BryanTianjx/hershight-deploy/blob/main/03-memory-bank/manifest.schema.json",
   "title": "Hindsight Memory Bank Manifest",
   "description": "Repository-side declaration for provisioning one Hindsight External memory bank.",
   "type": "object",
