@@ -66,4 +66,27 @@ systemctl --user enable --now "$SERVICE_NAME.service"
 echo "Installed and started $UNIT_FILE"
 echo "Check: systemctl --user status $SERVICE_NAME.service"
 echo "Logs:  journalctl --user -u $SERVICE_NAME.service"
+
+# ── Also install the boot catch-up backup unit ─────────────────────────────
+CATCHUP_UNIT_FILE="$UNIT_DIR/hindsight-backup-catchup.service"
+cat > "$CATCHUP_UNIT_FILE" <<'EOF'
+[Unit]
+Description=Hindsight External boot catch-up backup
+Documentation=file:///home/administrator/hindsight-deploy/01-deploy/docs/
+After=network-online.target hindsight.service
+Wants=hindsight.service
+
+[Service]
+Type=oneshot
+ExecStart=$REPO_ROOT/02-toolkit/scripts/hindsight_backup_cron.sh --catch-up
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target
+EOF
+chmod 600 "$CATCHUP_UNIT_FILE"
+systemctl --user daemon-reload
+systemctl --user enable "$CATCHUP_UNIT_FILE"
+echo "Installed $CATCHUP_UNIT_FILE"
 echo "For boot without an active login, enable user lingering if appropriate."
+
